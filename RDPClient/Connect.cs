@@ -12,6 +12,7 @@ namespace RDPClient
 {
     public partial class Connect : Form
     {
+        Form1 form;
         public Connect()
         {
             InitializeComponent();
@@ -19,7 +20,9 @@ namespace RDPClient
 
         private void button1_Click(object sender, EventArgs e)
         {
-
+            Hide();
+            form = new Form1(System.Net.IPAddress.Parse(textRemote.Text));
+            form.ShowDialog();
         }
     }
 }

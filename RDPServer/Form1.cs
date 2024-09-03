@@ -34,9 +34,14 @@ namespace RDPServer
             }
         }
 
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
         public Form1()
         {
-            port = 67480;
+            port = 31570;
             InitializeComponent();
             server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             serverThread = new Thread(new ThreadStart(serverListen));
@@ -48,6 +53,8 @@ namespace RDPServer
                 listAudio.Items.Add(new AudioDevice { deviceId = waveInDevice, name = deviceInfo.ProductName });
             }
             serverThread.Start();
+            wave = new WaveIn();
+            wave.WaveFormat = new WaveFormat(8000, 16, 2);
         }
 
         private void serverListen()
@@ -67,7 +74,6 @@ namespace RDPServer
                         {
                             // lets connect
                             client = remoteIp;
-                            wave = new WaveIn();
                             if (listAudio.SelectedItem != null)
                                 wave.DeviceNumber = ((AudioDevice)listAudio.SelectedItem).deviceId;
                             audio = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -77,6 +83,8 @@ namespace RDPServer
                             controlThread.Start();
                             videoThread = new Thread(new ThreadStart(videoSend));
                             videoThread.Start();
+                            wave.DataAvailable += Voice_Input;
+                            wave.StartRecording();
                             status.Text = "connected to " + remoteIp;
                             return;
                         }
@@ -86,6 +94,21 @@ namespace RDPServer
                 {
                     continue;
                 }
+            }
+        }
+
+        private void Voice_Input(object sender, WaveInEventArgs e)
+        {
+            try
+            {
+                //Подключаемся к удаленному адресу
+                IPEndPoint remote_point = new IPEndPoint(((IPEndPoint)client).Address, port + 1);
+                //посылаем байты, полученные с микрофона на удаленный адрес
+                audio.SendTo(e.Buffer, e.BytesRecorded, SocketFlags.None, remote_point);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
             }
         }
 
