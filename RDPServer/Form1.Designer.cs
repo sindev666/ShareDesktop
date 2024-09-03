@@ -29,13 +29,93 @@ namespace RDPServer
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.checkBoxControl = new System.Windows.Forms.CheckBox();
+            this.checkBoxAuto = new System.Windows.Forms.CheckBox();
+            this.status = new System.Windows.Forms.Label();
+            this.listAudio = new System.Windows.Forms.ListBox();
+            this.FPSControl = new System.Windows.Forms.NumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)(this.FPSControl)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // checkBoxControl
+            // 
+            this.checkBoxControl.AutoSize = true;
+            this.checkBoxControl.Location = new System.Drawing.Point(13, 13);
+            this.checkBoxControl.Name = "checkBoxControl";
+            this.checkBoxControl.Size = new System.Drawing.Size(98, 17);
+            this.checkBoxControl.TabIndex = 0;
+            this.checkBoxControl.Text = "Remote control";
+            this.checkBoxControl.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxAuto
+            // 
+            this.checkBoxAuto.AutoSize = true;
+            this.checkBoxAuto.Checked = true;
+            this.checkBoxAuto.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxAuto.Location = new System.Drawing.Point(13, 37);
+            this.checkBoxAuto.Name = "checkBoxAuto";
+            this.checkBoxAuto.Size = new System.Drawing.Size(136, 17);
+            this.checkBoxAuto.TabIndex = 1;
+            this.checkBoxAuto.Text = "Allow auto-connections";
+            this.checkBoxAuto.UseVisualStyleBackColor = true;
+            // 
+            // status
+            // 
+            this.status.AutoSize = true;
+            this.status.Location = new System.Drawing.Point(13, 61);
+            this.status.Name = "status";
+            this.status.Size = new System.Drawing.Size(76, 13);
+            this.status.TabIndex = 2;
+            this.status.Text = "not connected";
+            // 
+            // listAudio
+            // 
+            this.listAudio.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listAudio.FormattingEnabled = true;
+            this.listAudio.Location = new System.Drawing.Point(169, 13);
+            this.listAudio.Name = "listAudio";
+            this.listAudio.Size = new System.Drawing.Size(120, 95);
+            this.listAudio.TabIndex = 3;
+            // 
+            // FPSControl
+            // 
+            this.FPSControl.Location = new System.Drawing.Point(16, 82);
+            this.FPSControl.Name = "FPSControl";
+            this.FPSControl.Size = new System.Drawing.Size(120, 20);
+            this.FPSControl.TabIndex = 4;
+            this.FPSControl.Value = new decimal(new int[] {
+            15,
+            0,
+            0,
+            0});
+            // 
+            // Form1
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(296, 114);
+            this.Controls.Add(this.FPSControl);
+            this.Controls.Add(this.listAudio);
+            this.Controls.Add(this.status);
+            this.Controls.Add(this.checkBoxAuto);
+            this.Controls.Add(this.checkBoxControl);
+            this.Name = "Form1";
             this.Text = "Form1";
+            ((System.ComponentModel.ISupportInitialize)(this.FPSControl)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
         #endregion
+
+        private System.Windows.Forms.CheckBox checkBoxControl;
+        private System.Windows.Forms.CheckBox checkBoxAuto;
+        private System.Windows.Forms.Label status;
+        private System.Windows.Forms.ListBox listAudio;
+        private System.Windows.Forms.NumericUpDown FPSControl;
     }
 }
 
