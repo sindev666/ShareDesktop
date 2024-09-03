@@ -29,11 +29,13 @@ namespace RDPServer
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.checkBoxControl = new System.Windows.Forms.CheckBox();
             this.checkBoxAuto = new System.Windows.Forms.CheckBox();
             this.status = new System.Windows.Forms.Label();
             this.listAudio = new System.Windows.Forms.ListBox();
             this.FPSControl = new System.Windows.Forms.NumericUpDown();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.FPSControl)).BeginInit();
             this.SuspendLayout();
             // 
@@ -91,6 +93,11 @@ namespace RDPServer
             0,
             0});
             // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -117,6 +124,7 @@ namespace RDPServer
         private System.Windows.Forms.Label status;
         private System.Windows.Forms.ListBox listAudio;
         private System.Windows.Forms.NumericUpDown FPSControl;
+        private System.Windows.Forms.Timer timer1;
     }
 }
 

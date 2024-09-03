@@ -45,10 +45,12 @@ namespace RDPClient
             //привязываем поток входящего звука к буферному потоку
             wave.Init(bufferStream);
             audio = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            video = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            control = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            video = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            control = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             audioThread = new Thread(new ThreadStart(audioProc));
             audioThread.Start();
+            videoThread = new Thread(new ThreadStart(videoProc));
+            videoThread.Start();
         }
 
         private void audioProc()
@@ -74,6 +76,50 @@ namespace RDPClient
                 }
                 catch (SocketException)
                 { }
+            }
+        }
+
+        private void videoProc()
+        {
+            IPEndPoint localIP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port + 2);
+            video.Bind(localIP);
+            video.Listen(100);
+            while (true)
+            {
+                Socket image = video.Accept();
+                try
+                {
+                    Thread.Sleep(50);
+                    System.IO.MemoryStream stream = new System.IO.MemoryStream();
+                    while (image.Available > 0)
+                    {
+                        int len = image.Available;
+                        byte[] vs = new byte[len];
+                        image.Receive(vs);
+                        stream.Write(vs, 0, len);
+                    }
+                    image.Close();
+                    //byte[] vs = new byte[65535];
+                    //while (image.Connected)
+                    //{
+                    //    int recieved = image.Receive(vs);
+                    //    stream.Write(vs, 0, recieved);
+                    //    if (recieved == 0)
+                    //    {
+                    //        Thread.Sleep(10);
+                    //        if (image.Available == 0)
+                    //        {
+                    //            image.Send(vs);
+                    //            image.Disconnect(true);
+                    //            break;
+                    //        }
+                    //    }
+                    //}
+                    Bitmap bitmap = new Bitmap(stream);
+                    Graphics gr = CreateGraphics();
+                    gr.DrawImage(bitmap, new Point { X = 0, Y = 0 });
+                }
+                catch (Exception) { }
             }
         }
     }

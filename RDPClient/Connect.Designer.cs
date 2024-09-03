@@ -39,6 +39,7 @@ namespace RDPClient
             this.textRemote.Name = "textRemote";
             this.textRemote.Size = new System.Drawing.Size(266, 20);
             this.textRemote.TabIndex = 0;
+            this.textRemote.Text = "127.0.0.1";
             // 
             // button1
             // 
