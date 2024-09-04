@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RDPServer", "RDPServer\RDPS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RDPClient", "RDPClient\RDPClient.csproj", "{05E9D06D-3053-4406-90E5-43030DC9DE10}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RDPViewer", "RDPViewer\RDPViewer.csproj", "{43B484F7-0433-430C-A9EB-CB35E1D5BCA9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{05E9D06D-3053-4406-90E5-43030DC9DE10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05E9D06D-3053-4406-90E5-43030DC9DE10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05E9D06D-3053-4406-90E5-43030DC9DE10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43B484F7-0433-430C-A9EB-CB35E1D5BCA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43B484F7-0433-430C-A9EB-CB35E1D5BCA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43B484F7-0433-430C-A9EB-CB35E1D5BCA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43B484F7-0433-430C-A9EB-CB35E1D5BCA9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

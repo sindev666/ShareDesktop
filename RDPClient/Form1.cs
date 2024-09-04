@@ -21,13 +21,34 @@ namespace RDPClient
         Socket audio, video, control;
         Thread audioThread, videoThread;
         BufferedWaveProvider bufferStream;
+        DateTime watchdog;
+        bool alive = true;
+        Int32 port;
+        EndPoint server;
 
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        private void timer1_Tick(object sender, EventArgs e)
         {
-            Environment.Exit(0);
+            if ((DateTime.Now-watchdog)>TimeSpan.FromSeconds(1.5))
+            {
+                timer1.Enabled = false;
+                MessageBox.Show("Disconnected!");
+                Close();
+                alive = false;
+                audioThread.Interrupt();
+                videoThread.Interrupt();
+                video.Close();
+                audio.Close();
+                //video.Close();
+                //audio.Close();
+            }
+            
+                byte[] vs = Encoding.Default.GetBytes("watchdog");
+                control = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                control.Connect(server);
+                control.Send(vs);
+                control.Disconnect(false);
         }
 
-        Int32 port;
         public Form1(IPAddress address)
         {
             port = 31570;
@@ -51,6 +72,9 @@ namespace RDPClient
             audioThread.Start();
             videoThread = new Thread(new ThreadStart(videoProc));
             videoThread.Start();
+            bufferStream.DiscardOnBufferOverflow = true;
+            watchdog = DateTime.Now;
+            server = new IPEndPoint(address, port + 3);
         }
 
         private void audioProc()
@@ -63,7 +87,7 @@ namespace RDPClient
             //адрес, с которого пришли данные
             EndPoint remoteIp = new IPEndPoint(IPAddress.Any, 0);
             //бесконечный цикл
-            while (true)
+            while (alive)
             {
                 try
                 {
@@ -76,6 +100,8 @@ namespace RDPClient
                 }
                 catch (SocketException)
                 { }
+                catch (NAudio.MmException)
+                { bufferStream.ClearBuffer(); }
             }
         }
 
@@ -84,11 +110,11 @@ namespace RDPClient
             IPEndPoint localIP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port + 2);
             video.Bind(localIP);
             video.Listen(100);
-            while (true)
+            while (alive)
             {
-                Socket image = video.Accept();
                 try
                 {
+                    Socket image = video.Accept();
                     Thread.Sleep(50);
                     System.IO.MemoryStream stream = new System.IO.MemoryStream();
                     while (image.Available > 0)
@@ -118,6 +144,7 @@ namespace RDPClient
                     Bitmap bitmap = new Bitmap(stream);
                     Graphics gr = CreateGraphics();
                     gr.DrawImage(bitmap, new Point { X = 0, Y = 0 });
+                    watchdog = DateTime.Now;
                 }
                 catch (Exception) { }
             }

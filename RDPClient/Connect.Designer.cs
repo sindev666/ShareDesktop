@@ -60,6 +60,7 @@ namespace RDPClient
             this.Controls.Add(this.textRemote);
             this.Name = "Connect";
             this.Text = "Connect";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Connect_FormClosed);
             this.ResumeLayout(false);
             this.PerformLayout();
 

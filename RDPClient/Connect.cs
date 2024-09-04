@@ -23,6 +23,12 @@ namespace RDPClient
             Hide();
             form = new Form1(System.Net.IPAddress.Parse(textRemote.Text));
             form.ShowDialog();
+            Show();
+        }
+
+        private void Connect_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(0);
         }
     }
 }

@@ -26,7 +26,9 @@ namespace RDPServer
         Thread serverThread, controlThread, videoThread;
         Int32 port;
         EndPoint client;
+        DateTime watchdog;
         string statusText;
+        bool alive = false;
 
         private class AudioDevice
         {
@@ -61,6 +63,9 @@ namespace RDPServer
             wave = new WaveIn();
             wave.WaveFormat = new WaveFormat(8000, 16, 2);
             statusText = "not connected";
+            checkBoxControl.Checked = RDPServer.Properties.Settings.Default.RemoteControl;
+            checkBoxAuto.Checked = Properties.Settings.Default.AutoConnections;
+            InitScreenshot();
         }
 
         private void serverListen()
@@ -78,6 +83,7 @@ namespace RDPServer
                     {
                         if (checkBoxAuto.Checked || MessageBox.Show("Allow access from " + remoteIp + " to your PC?", remoteIp.ToString(),MessageBoxButtons.YesNo) == DialogResult.Yes)
                         {
+                            alive = true;
                             // lets connect
                             client = remoteIp;
                             audio = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -89,7 +95,10 @@ namespace RDPServer
                             videoThread.Start();
                             wave.DataAvailable += Voice_Input;
                             wave.StartRecording();
+                            watchdog = DateTime.Now;
                             statusText = "connected to " + remoteIp;
+                            serverThread = null;
+                            server.Close();
                             return;
                         }
                     }
@@ -118,7 +127,36 @@ namespace RDPServer
 
         private void controlListen()
         {
+            EndPoint end = new IPEndPoint(((IPEndPoint)client).Address, port + 3);
+            control.Bind(end);
+            control.Listen(10);
+            while (alive)
+            {
+                try
+                {
+                    Socket socket = control.Accept();
+                    byte[] vs = new byte[256];
+                    int len = socket.Receive(vs);
+                    byte[] cache = new byte[len];
+                    for (int i = 0; i < len; i++)
+                    {
+                        cache[i] = vs[i];
+                    }
+                    string s = Encoding.Default.GetString(cache);
+                    //MessageBox.Show(s);
+                    switch (s)
+                    {
+                        case "watchdog":
+                            {
+                                watchdog = DateTime.Now;
+                            }
+                            break;
 
+                    }
+                    socket.Close();
+                }
+                catch (SocketException) { }
+            }
         }
 
         Factory1 factory;
@@ -134,6 +172,20 @@ namespace RDPServer
             if (listAudio.SelectedItem != null)
                 wave.DeviceNumber = ((AudioDevice)listAudio.SelectedItem).deviceId;
             status.Text = statusText;
+            RDPServer.Properties.Settings.Default.RemoteControl = checkBoxControl.Checked;
+            Properties.Settings.Default.AutoConnections = checkBoxAuto.Checked;
+            if (serverThread == null && (DateTime.Now - watchdog) > TimeSpan.FromSeconds(1.5))
+            {
+                alive = false;
+                wave.StopRecording();
+            server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                videoThread.Abort();
+                controlThread.Interrupt();
+                control.Close();
+                serverThread = new Thread(new ThreadStart(serverListen));
+                serverThread.Start();
+                statusText = "disconnected";
+            }
         }
 
         OutputDuplication duplicatedOutput;
@@ -207,7 +259,6 @@ namespace RDPServer
         private void videoSend()
         {
             EndPoint end = new IPEndPoint(((IPEndPoint)client).Address, port + 2);
-            InitScreenshot();
             while (true)
             {
                 Bitmap bmp = TakeScreenshot();
