@@ -18,40 +18,170 @@ namespace RDPClient
     public partial class Form1 : Form
     {
         WaveOut wave;
-        Socket audio, video, control;
+        Socket audio, control;
         Thread audioThread, videoThread;
         BufferedWaveProvider bufferStream;
         DateTime watchdog;
         bool alive = true;
         Int32 port;
-        EndPoint server;
+        IPEndPoint server;
+        int vid = 0, aud = 0;
+
+        private async void videoServer()
+        {
+            //Listener.Start();
+            var client = new UdpClient(port + 2);
+            while (true)
+            {
+                try
+                {
+                    //TcpClient client = await Listener.AcceptTcpClientAsync();
+                    var data = await client.ReceiveAsync();
+                    using (var ms = new System.IO.MemoryStream(data.Buffer))
+                    {
+                        //int id = ms.ReadByte();
+                        Bitmap bmp = new Bitmap(ms);
+                        Color c = bmp.GetPixel(0, 0);
+                        if (c.B <= 10 && c.G <= 10 && c.R <= 10)
+                            continue;
+                        pictureBox1.Image = bmp;
+                        toolStripStatus.Text = bmp.GetPixel(0, 0).ToString();
+                    }
+                    vid += data.Buffer.Length;
+                }
+                catch (Exception) { }
+            }
+        }
+
+        private byte[] Concat(byte[] a,byte[] b)
+        {
+            byte[] l = new byte[a.Length + b.Length];
+            for (int i = 0; i < a.Length; i++)
+            {
+                l[i] = a[i];
+            }
+            for (int i = 0; i < b.Length; i++)
+            {
+                l[i + a.Length] = b[i];
+            }
+            return l;
+        }
+
+        private bool sendInput(int oper,int param,int x,int y, string name)
+        {
+            toolStripStatus.Text = name;
+            try
+            {
+                UdpClient client = new UdpClient();
+                client.Connect(server);
+                //await client.GetStream().WriteAsync(BitConverter.GetBytes(oper), 0, 4);
+                //await client.GetStream().WriteAsync(BitConverter.GetBytes(x), 0, 4);
+                //await client.GetStream().WriteAsync(BitConverter.GetBytes(y), 0, 4);
+                //await client.GetStream().WriteAsync(BitConverter.GetBytes(param), 0, 4);
+                byte[] vs = BitConverter.GetBytes(oper);
+                vs = Concat(vs, BitConverter.GetBytes(x));
+                vs = Concat(vs, BitConverter.GetBytes(y));
+                vs = Concat(vs, BitConverter.GetBytes(param));
+                client.Send(vs, 16);
+                client.Close();
+                return true;
+            }
+            catch (Exception)
+            {
+                toolStripStatus.Text += " error";
+                return false;
+            }
+        }
+
+        private async void Form1_Load(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            sendInput(33, 0, 0, e.KeyValue, "keyboard");
+        }
+
+        private void Form1_KeyUp(object sender, KeyEventArgs e)
+        {
+            sendInput(73, 0, 0, e.KeyValue, "keyboard");
+        }
+
+        private void Form1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                sendInput(117, 0, 0, 0, "mousedown");
+            if (e.Button == MouseButtons.Right)
+                sendInput(119, 0, 0, 0, "mousedown");
+        }
+
+        private void Form1_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                sendInput(117, 0, 0, 1, "mouseup");
+            if (e.Button == MouseButtons.Right)
+                sendInput(119, 0, 0, 1, "mouseup");
+        }
+
+        private void Form1_MouseMove(object sender, MouseEventArgs e)
+        {
+            int dx = ((Point)pictureBox1.Size).X, dy = ((Point)pictureBox1.Size).Y;
+            int x = e.X * 720 / dx;
+            int y = e.Y * 450 / dy;
+            sendInput(55, 0, x, y, "mousemove");
+        }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if ((DateTime.Now-watchdog)>TimeSpan.FromSeconds(1.5))
+            toolStripConnection.Value = Math.Min(500, toolStripConnection.Value + vid + aud / 1024);
+            //try
+            //{
+            //    byte[] vs = Encoding.Default.GetBytes("watchdog");
+            //    control = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //    control.Connect(server);
+            //    control.Send(vs);
+            //    control.Disconnect(false);
+            //    toolStripStatus.Text = "watchdog";
+            //}
+            //catch (SocketException)
+            //{
+            //    //timer1.Enabled = false;
+            //    //MessageBox.Show("Disconnected!");
+            //    //Close();
+            //    toolStripStatus.Text = "watchdog error";
+            //    //alive = false;
+            //    //audioThread.Interrupt();
+            //    //videoThread.Interrupt();
+            //    //video.Close();
+            //    //audio.Close();
+            //}
+            sendInput(17, 0, 0, 0, "watchdog");
+            try
             {
-                timer1.Enabled = false;
-                MessageBox.Show("Disconnected!");
-                Close();
-                alive = false;
-                audioThread.Interrupt();
-                videoThread.Interrupt();
-                video.Close();
-                audio.Close();
-                //video.Close();
-                //audio.Close();
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                socket.Connect(new IPEndPoint(server.Address, port));
+                byte[] buf = new byte[8];
+                buf[0] = 35;
+                socket.Send(buf);
+                socket.Close();
             }
-            
-                byte[] vs = Encoding.Default.GetBytes("watchdog");
-                control = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                control.Connect(server);
-                control.Send(vs);
-                control.Disconnect(false);
+            catch (Exception) { }
+            toolStripAudio.Text = "Audio: " + (aud / 1024) + " kbps";
+            toolStripVideo.Text = "Video: " + (vid / 1024) + " kbps";
+            toolStripConnection.Value /= 2;
+            aud /= 2;
+            vid /= 2;
         }
 
         public Form1(IPAddress address)
         {
-            port = 31570;
+            port = int.Parse(System.Configuration.ConfigurationSettings.AppSettings["port"]);
             InitializeComponent();
             Text = address.ToString();
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -66,11 +196,12 @@ namespace RDPClient
             //привязываем поток входящего звука к буферному потоку
             wave.Init(bufferStream);
             audio = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            video = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //Listener = new TcpListener(port + 2);
+            //video = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             control = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             audioThread = new Thread(new ThreadStart(audioProc));
             audioThread.Start();
-            videoThread = new Thread(new ThreadStart(videoProc));
+            videoThread = new Thread(new ThreadStart(videoServer));
             videoThread.Start();
             bufferStream.DiscardOnBufferOverflow = true;
             watchdog = DateTime.Now;
@@ -80,7 +211,7 @@ namespace RDPClient
         private void audioProc()
         {
             //Прослушиваем по адресу
-            IPEndPoint localIP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port + 1);
+            IPEndPoint localIP = new IPEndPoint(IPAddress.Any, port + 1);
             audio.Bind(localIP);
             //начинаем воспроизводить входящий звук
             wave.Play();
@@ -97,56 +228,12 @@ namespace RDPClient
                     int received = audio.ReceiveFrom(data, ref remoteIp);
                     //добавляем данные в буфер, откуда output будет воспроизводить звук
                     bufferStream.AddSamples(data, 0, received);
+                    aud += received;
                 }
                 catch (SocketException)
                 { }
                 catch (NAudio.MmException)
                 { bufferStream.ClearBuffer(); }
-            }
-        }
-
-        private void videoProc()
-        {
-            IPEndPoint localIP = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port + 2);
-            video.Bind(localIP);
-            video.Listen(100);
-            while (alive)
-            {
-                try
-                {
-                    Socket image = video.Accept();
-                    Thread.Sleep(50);
-                    System.IO.MemoryStream stream = new System.IO.MemoryStream();
-                    while (image.Available > 0)
-                    {
-                        int len = image.Available;
-                        byte[] vs = new byte[len];
-                        image.Receive(vs);
-                        stream.Write(vs, 0, len);
-                    }
-                    image.Close();
-                    //byte[] vs = new byte[65535];
-                    //while (image.Connected)
-                    //{
-                    //    int recieved = image.Receive(vs);
-                    //    stream.Write(vs, 0, recieved);
-                    //    if (recieved == 0)
-                    //    {
-                    //        Thread.Sleep(10);
-                    //        if (image.Available == 0)
-                    //        {
-                    //            image.Send(vs);
-                    //            image.Disconnect(true);
-                    //            break;
-                    //        }
-                    //    }
-                    //}
-                    Bitmap bitmap = new Bitmap(stream);
-                    Graphics gr = CreateGraphics();
-                    gr.DrawImage(bitmap, new Point { X = 0, Y = 0 });
-                    watchdog = DateTime.Now;
-                }
-                catch (Exception) { }
             }
         }
     }
